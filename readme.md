@@ -1,6 +1,6 @@
 ##Usage
 
-`npm install --save-dev snare`
+`npm install --save snare`
 
 ```javascript
 var snare = require('snare');
