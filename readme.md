@@ -12,8 +12,8 @@ var context = new AudioContext();
 var snareNode = snare(context);
 
 // Connect to target node
-snare.connect(context.destination);
+snareNode.connect(context.destination);
 
 // Start
-snare.start(context.currentTime);
+snareNode.start(context.currentTime);
 ```
