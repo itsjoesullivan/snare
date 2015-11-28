@@ -2,6 +2,7 @@ module.exports = function(context) {
 
   var audioNode = context.createGain();
   var masterBus = context.createGain();
+  masterBus.gain.value = 0.4;
   var masterHighBump = context.createBiquadFilter();
   masterHighBump.type = "peaking";
   var masterLowBump = context.createBiquadFilter();
