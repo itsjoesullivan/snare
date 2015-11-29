@@ -1,3 +1,5 @@
+var NoiseBuffer = require('noise-buffer');
+
 module.exports = function(context) {
 
   var audioNode = context.createGain();
@@ -15,18 +17,12 @@ module.exports = function(context) {
   masterHighBump.gain.value = 6;
   masterLowBump.gain.value = 12;
 
-  // courtesy of http://noisehack.com/generate-noise-web-audio-api/
-  var bufferSize = 2 * context.sampleRate;
-  var noiseBuffer = context.createBuffer(1, bufferSize, context.sampleRate);
-  var output = noiseBuffer.getChannelData(0);
-  for (var i = 0; i < bufferSize; i++) {
-    output[i] = Math.random() * 2 - 1;
-  }
   var noise = context.createBufferSource();
+  noise.buffer = NoiseBuffer(length);
+
   var noiseGain = context.createGain();
   var noiseHighpass = context.createBiquadFilter();
   noiseHighpass.type = "highpass";
-  noise.buffer = noiseBuffer;
   noise.connect(noiseGain);
   noiseGain.connect(noiseHighpass);
   noiseHighpass.connect(masterBus);
