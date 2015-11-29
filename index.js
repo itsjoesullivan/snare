@@ -18,7 +18,7 @@ module.exports = function(context) {
   masterLowBump.gain.value = 12;
 
   var noise = context.createBufferSource();
-  noise.buffer = NoiseBuffer(length);
+  noise.buffer = NoiseBuffer(1);
 
   var noiseGain = context.createGain();
   var noiseHighpass = context.createBiquadFilter();
