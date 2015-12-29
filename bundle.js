@@ -1,7 +1,12 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 var NoiseBuffer = require('noise-buffer');
 
-module.exports = function(context) {
+module.exports = function(context, parameters) {
+
+  parameters = parameters || {};
+  parameters.tone = typeof parameters.tone === 'number' ? parameters.tone : 64;
+  parameters.snappy = typeof parameters.snappy === 'number' ? parameters.snappy : 64;
+  console.log(parameters);
 
   return function() {
     var audioNode = context.createGain();
@@ -50,7 +55,7 @@ module.exports = function(context) {
       }
 
       noiseGain.gain.setValueAtTime(0.00001, when);
-      noiseGain.gain.exponentialRampToValueAtTime(1, when + 0.01);
+      noiseGain.gain.exponentialRampToValueAtTime(Math.max(0.000001, parameters.snappy / 127), when + 0.01);
       noiseGain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
       noise.start(when);
 
@@ -72,13 +77,15 @@ module.exports = function(context) {
 },{"noise-buffer":3}],2:[function(require,module,exports){
 var Snare = require('./index');
 var context = new AudioContext();
-var snare = Snare(context);
 
 document.getElementById('snare').addEventListener('click', function(e) {
+  var snare = Snare(context, {
+    snappy: parseInt(document.getElementById('snappy').value)
+  });
   snareNode = snare();
   snareNode.connect(context.destination);
   snareNode.start(context.currentTime + 0.01);
-  snareNode.gain.value = 0.1;
+  snareNode.gain.value = 0.5;
 });
 
 },{"./index":1}],3:[function(require,module,exports){

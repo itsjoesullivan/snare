@@ -1,8 +1,10 @@
 var Snare = require('./index');
 var context = new AudioContext();
-var snare = Snare(context);
 
 document.getElementById('snare').addEventListener('click', function(e) {
+  var snare = Snare(context, {
+    snappy: parseInt(document.getElementById('snappy').value)
+  });
   snareNode = snare();
   snareNode.connect(context.destination);
   snareNode.start(context.currentTime + 0.01);
