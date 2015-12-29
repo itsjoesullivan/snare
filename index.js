@@ -1,6 +1,10 @@
 var NoiseBuffer = require('noise-buffer');
 
-module.exports = function(context) {
+module.exports = function(context, parameters) {
+
+  parameters = parameters || {};
+  parameters.tone = typeof parameters.tone === 'number' ? parameters.tone : 64;
+  parameters.snappy = typeof parameters.snappy === 'number' ? parameters.snappy : 64;
 
   return function() {
     var audioNode = context.createGain();
@@ -49,7 +53,7 @@ module.exports = function(context) {
       }
 
       noiseGain.gain.setValueAtTime(0.00001, when);
-      noiseGain.gain.exponentialRampToValueAtTime(1, when + 0.01);
+      noiseGain.gain.exponentialRampToValueAtTime(Math.max(0.000001, parameters.snappy / 127), when + 0.01);
       noiseGain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
       noise.start(when);
 
