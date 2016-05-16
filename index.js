@@ -6,6 +6,8 @@ module.exports = function(context, parameters) {
   parameters.tone = typeof parameters.tone === 'number' ? parameters.tone : 64;
   parameters.snappy = typeof parameters.snappy === 'number' ? parameters.snappy : 64;
 
+  var noiseBuffer = NoiseBuffer(1);
+
   return function() {
     var audioNode = context.createGain();
     var masterBus = context.createGain();
@@ -23,7 +25,8 @@ module.exports = function(context, parameters) {
     masterLowBump.gain.value = 12;
 
     var noise = context.createBufferSource();
-    noise.buffer = NoiseBuffer(1);
+    noise.buffer = noiseBuffer;
+    noise.loop = true;
 
     var noiseGain = context.createGain();
     var noiseHighpass = context.createBiquadFilter();
