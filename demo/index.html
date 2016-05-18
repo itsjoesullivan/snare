@@ -1,6 +1,15 @@
 <!doctype html>
 <html>
   <head>
+    <style>
+      body {
+        font-family: sans-serif;
+      }
+      label {
+        display: inline-block;
+        width: 4em;
+      }
+    </style>
   </head>
   <body>
     <h1>Snare</h1>
@@ -9,6 +18,13 @@
     <br />
     <label>Duration</label>
     <input type="range" min="0" max="3" value="0.3" step="0.01" id="duration" />
+    <br />
+    <label>Snappy</label>
+    <input type="range" min="0" max="1" value="1" step="0.01" id="snappy" />
+    <br />
+    <label>Tone</label>
+    <input type="range" min="0" max="1" value="0.5" step="0.01" id="tone" />
+    <br />
     <br />
     <button id="play">Play</button>
     <br />

@@ -8,6 +8,8 @@ document.getElementById('play').addEventListener('click', function(e) {
 
   snareNode.detune.value = parseInt(document.getElementById('detune').value);
   snareNode.duration = parseFloat(document.getElementById('duration').value);
+  snareNode.snappy.value = parseFloat(document.getElementById('snappy').value);
+  snareNode.tone.value = parseFloat(document.getElementById('tone').value);
 
   snareNode.connect(context.destination);
   snareNode.start(context.currentTime);
@@ -90,9 +92,17 @@ module.exports = function(context, parameters) {
     noise.loop = true;
 
 
+    var snappyGainNode = context.createGain();
+    snappyGainNode.gain.value = 1;
+    audioNode.snappy = snappyGainNode.gain;
+
+
     var noiseGain = context.createGain();
-    noise.connect(noiseGain);
+    noise.connect(snappyGainNode);
+    snappyGainNode.connect(noiseGain);
     noiseGain.connect(noiseHighpass);
+
+
 
     var oscsGain = context.createGain();
     oscsGain.connect(oscsHighpass);
@@ -115,10 +125,31 @@ module.exports = function(context, parameters) {
     var oscs = [87.307, 329.628].map(function(frequency) {
       var osc = context.createOscillator();
       osc.frequency.value = frequency;
-      osc.connect(oscsGain);
+      //osc.connect(oscsGain);
       detuneGainNode.connect(osc.detune);
       return osc;
     });
+
+    var toneNode = context.createGain();
+    toneNode.gain.value = 0.5;
+    voltage.connect(toneNode);
+
+    audioNode.tone = toneNode.gain;
+
+    var oscAGainNode = context.createGain();
+    var oscBGainNode = context.createGain();
+
+    oscAGainNode.gain.value = -1;
+    oscBGainNode.gain.value = 0;
+
+    oscs[0].connect(oscAGainNode);
+    oscs[1].connect(oscBGainNode);
+
+    toneNode.connect(oscAGainNode.gain);
+    toneNode.connect(oscBGainNode.gain);
+
+    oscAGainNode.connect(oscsGain);
+    oscBGainNode.connect(oscsGain);
 
     masterLowBump.connect(audioNode);
 
@@ -137,7 +168,7 @@ module.exports = function(context, parameters) {
       }
 
       noiseGain.gain.setValueAtTime(0.0001, when);
-      noiseGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, parameters.snappy / 127),
+      noiseGain.gain.exponentialRampToValueAtTime(Math.max(0.0001, 1),
                                                   when + Math.min(audioNode.duration * (0.01 / 0.3), 0.01));
       noiseGain.gain.exponentialRampToValueAtTime(0.0001,
                                                   when + audioNode.duration);

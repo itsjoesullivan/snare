@@ -7,6 +7,8 @@ document.getElementById('play').addEventListener('click', function(e) {
 
   snareNode.detune.value = parseInt(document.getElementById('detune').value);
   snareNode.duration = parseFloat(document.getElementById('duration').value);
+  snareNode.snappy.value = parseFloat(document.getElementById('snappy').value);
+  snareNode.tone.value = parseFloat(document.getElementById('tone').value);
 
   snareNode.connect(context.destination);
   snareNode.start(context.currentTime);
