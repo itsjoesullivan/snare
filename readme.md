@@ -17,6 +17,18 @@ var snareNode = snare();
 // Connect to target node
 snareNode.connect(context.destination);
 
+/*
+ *  detune is connected to the oscillators' detune
+ */
+snareNode.detune instanceof AudioParam
+// -> true
+snareNode.detune.value = 1200;
+
+/*
+ *  duration defaults to 0.3
+ */
+snareNode.duration = 0.5
+
 // Start
 snareNode.start(context.currentTime);
 ```
