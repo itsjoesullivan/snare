@@ -27,7 +27,7 @@ snareNode.detune.value = 1200;
 /*
  *  duration defaults to 0.3
  */
-snareNode.duration = 0.5
+snareNode.duration = 0.2
 
 // Start
 snareNode.start(context.currentTime);
