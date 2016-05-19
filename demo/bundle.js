@@ -1,9 +1,31 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-var context = new AudioContext();
 var Snare = require('../index');
-var snare = Snare(context);
+var snare;
+
+var ct = 0;
+
+window.reset = function reset() {
+  if (window.context) {
+    window.context.close();
+  }
+  var context = new AudioContext();
+  window.context = context;
+  snare = Snare(context);
+}
+reset();
 
 document.getElementById('play').addEventListener('click', function(e) {
+  if (ct % 100 === 0) {
+    console.log(ct);
+  }
+  ct++;
+
+  /*
+  var osc = context.createOscillator();
+  osc.connect(context.destination);
+  osc.start(context.currentTime);
+  osc.stop(context.currentTime + 0.03);
+  */
   var snareNode = snare();
 
   snareNode.detune.value = parseInt(document.getElementById('detune').value);
@@ -23,7 +45,7 @@ document.getElementById('loop').addEventListener('click', function(e) {
   } else {
     interval = setInterval(function() {
       document.getElementById('play').click();
-    }, 150);
+    }, 70);
     document.getElementById('play').click();
   }
 });
@@ -153,6 +175,10 @@ module.exports = function(context, parameters) {
 
     masterLowBump.connect(audioNode);
 
+    noise.onended = function() {
+      masterLowBump.disconnect(audioNode);
+    };
+
     audioNode.duration = 0.3;
 
     audioNode.start = function(when) {
@@ -189,6 +215,8 @@ module.exports = function(context, parameters) {
 
       voltage.start(when);
       voltage.stop(when + audioNode.duration);
+
+
 
     };
     audioNode.stop = function(when) {

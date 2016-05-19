@@ -122,6 +122,10 @@ module.exports = function(context, parameters) {
 
     masterLowBump.connect(audioNode);
 
+    noise.onended = function() {
+      masterLowBump.disconnect(audioNode);
+    };
+
     audioNode.duration = 0.3;
 
     audioNode.start = function(when) {
@@ -158,6 +162,8 @@ module.exports = function(context, parameters) {
 
       voltage.start(when);
       voltage.stop(when + audioNode.duration);
+
+
 
     };
     audioNode.stop = function(when) {
