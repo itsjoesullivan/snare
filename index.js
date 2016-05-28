@@ -1,58 +1,47 @@
 var NoiseBuffer = require('noise-buffer');
+var augmentedOnEnded = require('./lib/augmented-on-ended');
+var getVoltage = require('./lib/get-voltage');
 
-// todo: make a module
-function getVoltage(context) {
-  var buffer = context.createBuffer(1, 2, 44100);
-  var data = buffer.getChannelData(0);
-  data[0] = 1;
-  data[1] = 1;
-  var source = context.createBufferSource();
-  source.buffer = buffer;
-  source.loop = true;
-  return source;
-}
 
 module.exports = function(context, parameters) {
 
   var playingNodes = [];
 
-
   parameters = parameters || {};
   parameters.tone = typeof parameters.tone === 'number' ? parameters.tone : 64;
   parameters.snappy = typeof parameters.snappy === 'number' ? parameters.snappy : 64;
 
-
   var noiseBuffer = NoiseBuffer(1);
 
-
-  var masterHighBump = context.createBiquadFilter();
-  masterHighBump.frequency.value = 4000;
-  masterHighBump.gain.value = 6;
-  masterHighBump.type = "peaking";
-  var masterLowBump = context.createBiquadFilter();
-  masterLowBump.frequency.value = 200;
-  masterLowBump.gain.value = 12;
-  masterLowBump.type = "peaking";
-  masterHighBump.connect(masterLowBump);
-
-
-  var masterBus = context.createGain();
-  masterBus.gain.value = 0.4;
-  masterBus.connect(masterHighBump);
-
-
-  var noiseHighpass = context.createBiquadFilter();
-  noiseHighpass.type = "highpass";
-  noiseHighpass.frequency.value = 1200;
-  noiseHighpass.connect(masterBus);
-
-
-  var oscsHighpass = context.createBiquadFilter();
-  oscsHighpass.type = "highpass";
-  oscsHighpass.frequency.value = 400;
-  oscsHighpass.connect(masterBus);
-
   return function() {
+
+    var masterHighBump = context.createBiquadFilter();
+    masterHighBump.frequency.value = 4000;
+    masterHighBump.gain.value = 6;
+    masterHighBump.type = "peaking";
+    var masterLowBump = context.createBiquadFilter();
+    masterLowBump.frequency.value = 200;
+    masterLowBump.gain.value = 12;
+    masterLowBump.type = "peaking";
+    masterHighBump.connect(masterLowBump);
+
+
+    var masterBus = context.createGain();
+    masterBus.gain.value = 0.4;
+    masterBus.connect(masterHighBump);
+
+
+    var noiseHighpass = context.createBiquadFilter();
+    noiseHighpass.type = "highpass";
+    noiseHighpass.frequency.value = 1200;
+    noiseHighpass.connect(masterBus);
+
+
+    var oscsHighpass = context.createBiquadFilter();
+    oscsHighpass.type = "highpass";
+    oscsHighpass.frequency.value = 400;
+    oscsHighpass.connect(masterBus);
+
     var audioNode = context.createGain();
 
 
@@ -65,16 +54,23 @@ module.exports = function(context, parameters) {
     snappyGainNode.gain.value = 1;
     audioNode.snappy = snappyGainNode.gain;
 
+    var oscsPreChoke = context.createGain();
+    oscsPreChoke.gain.value = 0;
+    var noisePreChoke = context.createGain();
+    noisePreChoke.gain.value = 0;
+
 
     var noiseGain = context.createGain();
     noise.connect(snappyGainNode);
     snappyGainNode.connect(noiseGain);
-    noiseGain.connect(noiseHighpass);
+    noiseGain.connect(noisePreChoke);
+    noisePreChoke.connect(noiseHighpass);
 
 
 
     var oscsGain = context.createGain();
-    oscsGain.connect(oscsHighpass);
+    oscsGain.connect(oscsPreChoke);
+    oscsPreChoke.connect(oscsHighpass);
 
     var voltage = getVoltage(context);
     var detuneGainNode = context.createGain();
@@ -82,19 +78,13 @@ module.exports = function(context, parameters) {
     audioNode.detune = detuneGainNode.gain;
     voltage.connect(detuneGainNode);
 
-    /*
-    // Hmm... how should these respond to tuning?
-    detuneGainNode.connect(noiseHighpass.detune)
-    detuneGainNode.connect(oscsHighpass.detune)
-    detuneGainNode.connect(masterHighBump.detune)
-    detuneGainNode.connect(masterLowBump.detune);
-    */
+    var postChoke = context.createGain();
+    postChoke.gain.value = 0;
 
 
     var oscs = [87.307, 329.628].map(function(frequency) {
       var osc = context.createOscillator();
       osc.frequency.value = frequency;
-      //osc.connect(oscsGain);
       detuneGainNode.connect(osc.detune);
       return osc;
     });
@@ -120,15 +110,26 @@ module.exports = function(context, parameters) {
     oscAGainNode.connect(oscsGain);
     oscBGainNode.connect(oscsGain);
 
-    masterLowBump.connect(audioNode);
 
-    noise.onended = function() {
-      masterLowBump.disconnect(audioNode);
-    };
+    masterLowBump.connect(postChoke);
+    postChoke.connect(audioNode);
+
+
+    augmentedOnEnded(noise, function() {
+      masterLowBump.disconnect(postChoke);
+    });
+
 
     audioNode.duration = 0.3;
 
     audioNode.start = function(when) {
+
+      oscsPreChoke.gain.setValueAtTime(0, when + 0.0001);
+      oscsPreChoke.gain.linearRampToValueAtTime(1, when + 0.0002);
+      noisePreChoke.gain.setValueAtTime(0, when + 0.0001);
+      noisePreChoke.gain.linearRampToValueAtTime(1, when + 0.0002);
+      postChoke.gain.setValueAtTime(0, when + 0.0001);
+      postChoke.gain.linearRampToValueAtTime(1, when + 0.0002);
 
       // each Snare instance is monophonic
       while (playingNodes.length) {
@@ -164,9 +165,16 @@ module.exports = function(context, parameters) {
       voltage.stop(when + audioNode.duration);
 
 
-
     };
     audioNode.stop = function(when) {
+
+      oscsPreChoke.gain.setValueAtTime(1, when);
+      oscsPreChoke.gain.linearRampToValueAtTime(0, when + 0.0001);
+      noisePreChoke.gain.setValueAtTime(1, when);
+      noisePreChoke.gain.linearRampToValueAtTime(0, when + 0.0001);
+      postChoke.gain.setValueAtTime(1, when);
+      postChoke.gain.linearRampToValueAtTime(0, when + 0.0001);
+
       // Do not stop twice
       audioNode.stop = function() {};
       audioNode.gain.setValueAtTime(1, when);
